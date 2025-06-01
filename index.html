@@ -689,20 +689,32 @@
         document.getElementById('consultationForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
+            const form = this;
+            const submitButton = form.querySelector('.submit-btn');
+            const originalButtonText = submitButton.innerHTML;
+            submitButton.innerHTML = 'Submitting...';
+            submitButton.disabled = true;
+
             // Get form data
-            const formData = new FormData(this);
+            const formData = new FormData(form);
             const data = {};
             for (let [key, value] of formData.entries()) {
                 data[key] = value;
             }
             
-            // Hide form and show success message
-            this.style.display = 'none';
-            document.getElementById('successMessage').style.display = 'block';
+            // !! REPLACE WITH YOUR GOOGLE APPS SCRIPT URL !!
+            const scriptURL = 'https://script.google.com/macros/s/AKfycb0gZiCP7RjyMM8Az0wY-hhjSWRiSCaFEfnzkndzUriitqIxcjW3-YNBGSHVudX6ba_/exec'; 
             
-            // Create WhatsApp message
-            const phoneNumber = data.phone.replace(/\D/g, '');
-            const message = `🎓 New Seminar Registration from MedEd Overseas Website
+            fetch(scriptURL, { method: 'POST', body: formData})
+                .then(response => response.json())
+                .then(res => {
+                    if (res.result === 'success') {
+                        // Hide form and show success message
+                        form.style.display = 'none';
+                        document.getElementById('successMessage').style.display = 'block';
+                        
+                        // Create WhatsApp message (optional, if you still want this client-side)
+                        const message = `🎓 New Seminar Registration from MedEd Overseas Website
             
 Name: ${data.name}
 Phone: ${data.phone}
@@ -710,17 +722,24 @@ Education: ${data.education}
 City: ${data.city}
 
 Please confirm seminar details and scholarship information.`;
-            
-            // Optional: Open WhatsApp (uncomment the line below)
-            // window.open(`https://wa.me/919334804511?text=${encodeURIComponent(message)}`, '_blank');
-            
-            console.log('Form submitted with data:', data);
-            
-            // Simulate form submission delay
-            setTimeout(() => {
-                // You can add actual form submission logic here
-                console.log('Form data processed successfully');
-            }, 1000);
+                        
+                        // Optional: Open WhatsApp (uncomment the line below)
+                        // window.open(`https://wa.me/919334804511?text=${encodeURIComponent(message)}`, '_blank');
+                        
+                        console.log('Form submitted successfully to Google Sheets:', data);
+                    } else {
+                        console.error('Error submitting to Google Sheets:', res.error);
+                        alert('There was an error submitting your registration. Please try again or contact us directly.');
+                        submitButton.innerHTML = originalButtonText;
+                        submitButton.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error!', error.message);
+                    alert('There was an error submitting your registration. Please try again or contact us directly.');
+                    submitButton.innerHTML = originalButtonText;
+                    submitButton.disabled = false;
+                });
         });
         
         // Add interactive effects
